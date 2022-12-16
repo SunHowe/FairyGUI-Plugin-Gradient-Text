@@ -1,0 +1,11 @@
+{
+	"name": "com.fairygui.plugin.gradientspectorts",
+	"displayName": "Gradient Inspector Ts",
+	"description": "TextField Gradient inspector",
+	"version": "0.0.1",
+	"author": {
+		"name": "SunHowe"
+	},
+	"icon": "icon.png",
+	"main": "main.js"
+}
