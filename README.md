@@ -83,15 +83,15 @@ namespace FairyGUI
         /// <summary>
         /// 设置四方向渐变色
         /// </summary>
-        public void UpdateGradientColor(Color32 top, Color32 bottom, Color32 left, Color32 right)
+        public void UpdateGradientColor(Color32 leftTop, Color32 leftBottom, Color32 rightTop, Color32 rightBottom)
         {
             var tf = _textField.textFormat;
 
             var buffer = tf.gradientColor ??= new Color32[4];
-            buffer[0] = top;
-            buffer[1] = bottom;
-            buffer[2] = left;
-            buffer[3] = right;
+            buffer[0] = leftTop;
+            buffer[1] = leftBottom;
+            buffer[2] = rightTop;
+            buffer[3] = rightBottom;
             
             this.gradientColor = buffer;
         }

@@ -19,8 +19,8 @@ class GradientColorInspector extends csharp_1.FairyEditor.View.PluginInspector {
     inputs = {};
     colors = {};
     last_obj;
-    dirs = [GradientDir.up, GradientDir.down, GradientDir.left, GradientDir.right];
-    customDataObj;
+    dirs = [GradientDir.up, GradientDir.left, GradientDir.right, GradientDir.down];
+    gradient_text;
     allowObjectTypes = ["text", "richtext", "inputtext", "Button", "Label"];
     color32List;
     constructor() {
@@ -122,21 +122,39 @@ class GradientColorInspector extends csharp_1.FairyEditor.View.PluginInspector {
     }
     update_color(obj, force) {
         let color = this.get_color_text();
-        if (color.length > 0) {
-            this.customDataObj["gradient"] = color;
+        if (this.gradient_text == color) {
+            if (!force) {
+                return;
+            }
         }
         else {
-            delete this.customDataObj["gradient"];
+            this.gradient_text = color;
+            let customData = obj.GetProperty("customData");
+            let customDataObj = null;
+            if (customData != null && customData != "") {
+                try {
+                    customDataObj = JSON.parse(obj.customData);
+                }
+                catch (error) {
+                    console.log("json error:", error);
+                    customDataObj = {};
+                }
+            }
+            else {
+                customDataObj = {};
+            }
+            if (color.length > 0) {
+                customDataObj["gradient"] = color;
+            }
+            else {
+                delete customDataObj["gradient"];
+            }
+            let json = "";
+            if (Object.keys(customDataObj).length > 0) {
+                json = JSON.stringify(customDataObj);
+            }
+            obj.docElement.SetProperty("customData", json);
         }
-        let customData = obj.GetProperty("customData");
-        let json = "";
-        if (Object.keys(this.customDataObj).length > 0) {
-            json = JSON.stringify(this.customDataObj);
-        }
-        if (json == customData && !force) {
-            return;
-        }
-        obj.docElement.SetProperty("customData", json);
         let textField = this.get_text_field(obj);
         if (textField == null) {
             return;
@@ -163,13 +181,15 @@ class GradientColorInspector extends csharp_1.FairyEditor.View.PluginInspector {
         }
         this.color32List.Clear();
         if (this.check_vertical.selected) {
-            this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.up)));
-            this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.down)));
             if (this.check_horizontal.selected) {
-                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.left)));
-                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.right)));
+                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.up))); // 左上角
+                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.left))); // 左下角
+                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.right))); // 右上角
+                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.down))); // 右下角
             }
             else {
+                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.up)));
+                this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.down)));
                 this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.up)));
                 this.color32List.Add(this.get_color_32(this.get_dir_color(GradientDir.down)));
             }
@@ -187,13 +207,15 @@ class GradientColorInspector extends csharp_1.FairyEditor.View.PluginInspector {
             return "";
         let s = "";
         if (this.check_vertical.selected) {
-            s += csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.up));
-            s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.down));
             if (this.check_horizontal.selected) {
-                s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.left));
-                s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.right));
+                s += csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.up)); // 左上角
+                s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.left)); // 左下角
+                s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.right)); // 右上角
+                s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.down)); // 右下角
             }
             else {
+                s += csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.up));
+                s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.down));
                 s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.up));
                 s += "," + csharp_1.FairyEditor.ColorUtil.ToHexString(this.get_dir_color(GradientDir.down));
             }
@@ -228,35 +250,50 @@ class GradientColorInspector extends csharp_1.FairyEditor.View.PluginInspector {
         // this.check_vertical.selected = false
         // this.check_horizontal.selected = false
         this.colors = {};
-        this.customDataObj = null;
+        this.gradient_text = "";
         let customData = obj.GetProperty("customData");
+        let customDataObj = null;
         if (customData != null && customData != "") {
             try {
-                this.customDataObj = JSON.parse(obj.customData);
+                customDataObj = JSON.parse(obj.customData);
             }
             catch (error) {
                 console.log("json error:", error);
             }
         }
-        let color = "";
-        if (this.customDataObj) {
-            color = this.customDataObj.gradient ? this.customDataObj.gradient : "";
+        if (!customDataObj || !customDataObj.gradient) {
+            this.check_vertical.selected = false;
+            this.check_horizontal.selected = false;
+            return;
         }
-        else {
-            this.customDataObj = {};
-        }
+        this.gradient_text = customDataObj.gradient;
         let reg = /(#\w+)/g;
         let r;
         let i = 0;
-        while (r = reg.exec(color)) {
+        while (r = reg.exec(this.gradient_text)) {
             let color_hex = r[1];
             let dir = this.dirs[i];
             this.colors[dir] = csharp_1.FairyEditor.ColorUtil.FromHexString(color_hex);
             this.inputs[dir].colorValue = this.colors[dir];
             i++;
         }
-        this.check_vertical.selected = Object.keys(this.colors).length >= 2;
-        this.check_horizontal.selected = Object.keys(this.colors).length >= 4;
+        // 顺序为 左上角、左下角、右上角、右下角
+        let color_left_up = csharp_1.FairyEditor.ColorUtil.ToHexString(this.colors[GradientDir.up]);
+        let color_left_down = csharp_1.FairyEditor.ColorUtil.ToHexString(this.colors[GradientDir.left]);
+        let color_right_up = csharp_1.FairyEditor.ColorUtil.ToHexString(this.colors[GradientDir.right]);
+        let color_right_down = csharp_1.FairyEditor.ColorUtil.ToHexString(this.colors[GradientDir.down]);
+        if (color_left_up == color_right_up && color_left_down == color_right_down) {
+            this.check_horizontal.selected = false;
+        }
+        else {
+            this.check_horizontal.selected = true;
+        }
+        if (color_left_up == color_left_down && color_right_up == color_right_down) {
+            this.check_vertical.selected = false;
+        }
+        else {
+            this.check_vertical.selected = true;
+        }
     }
 }
 //Register a inspector
